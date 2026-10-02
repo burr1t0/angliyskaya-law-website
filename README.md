@@ -44,21 +44,22 @@
 ## Архитектура
 
 ```mermaid
-flowchart LR
-    V[Посетитель] -->|HTTPS| N[Nginx]
+flowchart TB
+    V[Посетитель] -->|HTTPS| N
     A[Администратор] -->|веб-админка| N
-    N --> G[Gunicorn + Flask]
-    G --> DB[(SQLite)]
-    B1[Бот заявок и отзывов] --> DB
-    B2[Бот чата] --> DB
-    B3[Бот материалов] --> DB
+    A -->|Telegram| TG[Telegram API]
+    subgraph RU[VPS в России]
+        N[Nginx] --> G[Gunicorn + Flask]
+        G --> DB[(SQLite)]
+        BOTS[Три Telegram-бота<br/>aiogram] --> DB
+    end
     G -->|письма в фоне| M[SMTP]
-    G -->|уведомления в фоне| P[SOCKS5-прокси за рубежом]
-    B1 --> P
-    B2 --> P
-    B3 --> P
-    P --> TG[Telegram API]
-    A -->|Telegram| TG
+    G -->|уведомления в фоне| P
+    BOTS --> P
+    subgraph ABROAD[VPS за рубежом]
+        P[SOCKS5-прокси]
+    end
+    P --> TG
 ```
 
 Сайт и три бота работают с одной SQLite на одном российском сервере: так данные не размазываются между машинами, а персональные данные остаются в РФ. Второй сервер за границей выполняет единственную роль — прокси для запросов к Telegram.

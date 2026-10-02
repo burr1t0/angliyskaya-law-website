@@ -44,21 +44,22 @@ By the numbers: roughly 3,100 lines of Python, 1,000 of JS, 1,300 of CSS and 1,9
 ## Architecture
 
 ```mermaid
-flowchart LR
-    V[Visitor] -->|HTTPS| N[Nginx]
+flowchart TB
+    V[Visitor] -->|HTTPS| N
     A[Administrator] -->|web admin| N
-    N --> G[Gunicorn + Flask]
-    G --> DB[(SQLite)]
-    B1[Leads and reviews bot] --> DB
-    B2[Chat bot] --> DB
-    B3[Materials bot] --> DB
+    A -->|Telegram| TG[Telegram API]
+    subgraph RU[VPS in Russia]
+        N[Nginx] --> G[Gunicorn + Flask]
+        G --> DB[(SQLite)]
+        BOTS[Three Telegram bots<br/>aiogram] --> DB
+    end
     G -->|emails in background| M[SMTP]
-    G -->|notifications in background| P[SOCKS5 proxy abroad]
-    B1 --> P
-    B2 --> P
-    B3 --> P
-    P --> TG[Telegram API]
-    A -->|Telegram| TG
+    G -->|notifications in background| P
+    BOTS --> P
+    subgraph ABROAD[VPS abroad]
+        P[SOCKS5 proxy]
+    end
+    P --> TG
 ```
 
 The site and all three bots share one SQLite database on a single server in Russia, so data is not scattered across machines and personal data stays in the country. A second server abroad does exactly one thing: it proxies requests to Telegram.
